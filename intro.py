@@ -18,7 +18,7 @@ response = openai.ChatCompletion.create(
     model = model,
     messages = message_input['messages'],
     temperature = 0, #Si está más cercano a 1, es posible que tenga alucinaciones.
-    n = 1#, #Número de respuestas
+    n = 1, #Número de respuestas
     max_tokens = 100
     )
 
