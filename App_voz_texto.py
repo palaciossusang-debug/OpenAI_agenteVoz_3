@@ -12,20 +12,18 @@ Docs oficiales (Audio STT / modelos):
 - Speech-to-Text (Audio API): https://platform.openai.com/docs/guides/audio
 - Modelos STT (gpt-4o-transcribe / gpt-4o-mini-transcribe / whisper-1)
 """
-
-import os
-import csv
 from datetime import datetime
-from pathlib import Path
-from typing import Dict, Any, List
-
 from openai import OpenAI
+import os
+import getpass
+from pathlib import Path
 from pydub import AudioSegment
+from typing import Dict, Any, List
 from tqdm import tqdm
+import csv
 
 # ========= Config =========
-#INPUT_DIR = Path("./incidencias_audio")
-INPUT_DIR = Path(D:/Audio)
+INPUT_DIR = Path("./Audio_voz")
 OUTPUT_DIR = Path("./salidas")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 CSV_PATH = OUTPUT_DIR / "incidencias_transcritas.csv"
@@ -39,9 +37,13 @@ NLP_MODEL = os.getenv("NLP_MODEL", "gpt-4o-mini")  # rápido y económico para t
 AUDIO_EXTS = {".wav", ".mp3", ".m4a", ".ogg", ".flac"}
 
 # ========= Cliente OpenAI =========
-client = OpenAI(api_key=os.getenv("SP_API_KEY_VOZ"))
+OPENAI_API_KEY = getpass.getpass("Ingresa tu API Key de OpenAI:")
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+STT_MODEL = "gpt-4o-mini-transcribe"  # o "whisper-1"
 
 # ========= Utilidades =========
+
 def ensure_wav(path: Path) -> Path:
     """
     Convierte a WAV si es necesario (mejora compatibilidad).
@@ -55,21 +57,24 @@ def ensure_wav(path: Path) -> Path:
     return wav_path
 
 def transcribe_audio(audio_path: Path) -> str:
-    """
-    Transcribe usando la API de Audio de OpenAI.
-    """
+    """Transcribe usando la API de Audio de OpenAI (SDK nuevo)."""
     wav_path = ensure_wav(audio_path)
     with open(wav_path, "rb") as f:
-        # API oficial de transcripciones (modelos gpt-4o-*-transcribe o whisper-1)
-        # https://platform.openai.com/docs/api-reference/audio
         resp = client.audio.transcriptions.create(
-            model=STT_MODEL,
-            file=f,
-            # Si quieres timestamped words/paragraphs cuando esté disponible:
-            # response_format="json"
+            model=STT_MODEL,   # "gpt-4o-mini-transcribe" o "whisper-1"
+            file=f
         )
-    # En SDKs recientes, el texto viene en .text
-    return resp.text if hasattr(resp, "text") else str(resp)
+    return resp.text
+
+# ========= Ejecución =========
+#audio_file = Path("Audio_voz/cliente-enojado.mp3")  # coloca aquí tu archivo
+#texto_transcrito = transcribe_audio(audio_file)
+
+# Imprimir el texto transcrito
+#print("\n🗣️ Transcripción del audio:")
+#print("---------------------------------------")
+#print(texto_transcrito)
+#print("---------------------------------------")
 
 def extract_structured(transcript: str) -> Dict[str, Any]:
     """
@@ -166,3 +171,6 @@ def process_folder():
 if __name__ == "__main__":
     INPUT_DIR.mkdir(parents=True, exist_ok=True)
     process_folder()
+
+
+
